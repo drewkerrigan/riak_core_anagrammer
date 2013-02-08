@@ -1,0 +1,14 @@
+%% -*- erlang -*-
+{application, riak_core_anagrammer,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  riak_core
+                 ]},
+  {mod, { riak_core_anagrammer_app, []}},
+  {env, []}
+ ]}.
