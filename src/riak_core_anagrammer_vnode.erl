@@ -30,6 +30,8 @@ init([Partition]) ->
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
 handle_command({solve,Word}, _Sender, State) ->
+	A = for_each_line_in_file("/Users/dkerrigan/src/riak_core_anagrammer/resources/words.txt",
+	fun(X, Count) -> io:fwrite("~10B: ~s", [Count, X]), Count + 1 end, [read], 0),
 	{reply, {Word, State#state.partition}, State};
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
@@ -67,3 +69,16 @@ handle_exit(_Pid, _Reason, State) ->
 
 terminate(_Reason, _State) ->
     ok.
+
+
+%% Internal Functions
+for_each_line_in_file(Name, Proc, Mode, Accum0) ->
+    {ok, Device} = file:open(Name, Mode),
+    for_each_line(Device, Proc, Accum0).
+
+for_each_line(Device, Proc, Accum) ->
+    case io:get_line(Device, "") of
+        eof  -> file:close(Device), Accum;
+        Line -> NewAccum = Proc(Line, Accum),
+                    for_each_line(Device, Proc, NewAccum)
+    end.
