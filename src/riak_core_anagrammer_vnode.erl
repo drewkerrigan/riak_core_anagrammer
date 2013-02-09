@@ -36,9 +36,13 @@ solve(Preflist, ReqID, Word) ->
                                    ?MASTER).
 
 init([Partition]) ->
-	Words = [],
-%% 	_A = for_each_line_in_file("/Users/dkerrigan/src/riak_core_anagrammer/resources/words.txt",
-%% 		fun(X, Count) -> Words = lists:append([Words, X]), Count + 1 end, [read], 0),
+	Words = readlines("/Users/dkerrigan/src/riak_core_anagrammer/resources/words_small.txt"),
+	%%iterate over list, sort characters of words, store that as key... or something
+	%%lists:sort("Hello").
+%% 	Words = [],
+%%  	_A = for_each_line_in_file("/Users/dkerrigan/src/riak_core_anagrammer/resources/words_small.txt",
+%% %% 		fun(X, Count) -> io:fwrite("~10B: ~s", [Count, X]), Count + 1 end, [read], 0),
+%%  		fun(X, Count) -> io:fwrite("~10B: ~s", [Count, X]), Words = lists:append([Words, list_to_binary(X)]]), Count + 1 end, [read], 0),
 	{ok, #state { partition=Partition, words=Words }}.
 
 %% Sample command: respond to a ping
@@ -50,16 +54,9 @@ handle_command(ping, _Sender, State) ->
 %%	fun(X, Count) -> io:fwrite("~10B: ~s", [Count, X]), Count + 1 end, [read], 0),
 %%	{reply, {Word, State#state.partition}, State};
 
-handle_command({solve, ReqID, Word}, _Sender, #state{words=_Words}=State) ->
-%%    Reply =
-%%        case dict:find(StatName, Stats) of
-%%            error ->
-%%                not_found;
-%%            {ok, Found} ->
-%%                Found
-%%        end,
-%%    {reply, {ok, ReqID, Reply}, State};
-	{reply, {ok, ReqID, Word}, State};
+handle_command({solve, ReqID, Word}, _Sender, #state{words=Words}=State) ->
+	Reply = lists:filter(fun(X) -> string:equal(lists:sort(X), lists:sort(Word)) end, Words),
+	{reply, {ok, ReqID, Reply}, State};
 
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
@@ -103,13 +100,12 @@ terminate(_Reason, _State) ->
 %%% Internal Functions
 %%%===================================================================
 
-for_each_line_in_file(Name, Proc, Mode, Accum0) ->
-    {ok, Device} = file:open(Name, Mode),
-    for_each_line(Device, Proc, Accum0).
+readlines(FileName) ->
+    {ok, Device} = file:open(FileName, [read]),
+    get_all_lines(Device, []).
 
-for_each_line(Device, Proc, Accum) ->
+get_all_lines(Device, Accum) ->
     case io:get_line(Device, "") of
-        eof  -> file:close(Device), Accum;
-        Line -> NewAccum = Proc(Line, Accum),
-                    for_each_line(Device, Proc, NewAccum)
+        eof  -> file:close(Device), lists:reverse(Accum);
+        Line -> get_all_lines(Device, [Line|Accum])
     end.

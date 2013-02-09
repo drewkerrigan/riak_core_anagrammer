@@ -49,9 +49,10 @@ init([ReqId, From, Client, Word]) ->
 prepare(timeout, SD0=#state{client=Client,
                             word=Word}) ->
     %%get all vnodes here!
-	DocIdx = riak_core_util:chash_key({list_to_binary(Client),
-                                       list_to_binary(Word)}),
-    Prelist = riak_core_apl:get_apl(DocIdx, ?N, riak_core_anagrammer),
+	%%AllVnodes = riak_core_vnode_manager:all_vnodes(riak_core_anagrammer_vnode),
+	{ok,{_,_,_,{_,Prelist},_,_,_,_,_,_,_}} = riak_core_ring_manager:get_my_ring(),
+	DocIdx = riak_core_util:chash_key({list_to_binary(Client), list_to_binary(Word)}),
+%%    Prelist = riak_core_apl:get_apl(DocIdx, 1, riak_core_anagrammer),
     SD = SD0#state{preflist=Prelist},
     {next_state, execute, SD, 0}.
 
